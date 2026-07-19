@@ -1,0 +1,55 @@
+# Python and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+tests/output/
+
+# Local environments and secrets
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+*.pem
+*.key
+*credentials*.json
+*secrets*.json
+
+# Personal creator projects and captured content
+projects/
+captures/
+downloads/
+samples/
+output/
+outputs/
+workspace/
+workspaces/
+*.sqlite
+*.sqlite3
+*.db
+*.har
+*.mhtml
+*.mp3
+*.wav
+*.m4a
+*.mp4
+*.mov
+*.webm
+
+# Browser and authentication state
+browser-data/
+chrome-data/
+user-data-dir/
+cookies*.txt
+cookies*.json
+storage-state*.json
+auth-state*.json
+session*.json
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

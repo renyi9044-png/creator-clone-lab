@@ -1,0 +1,4 @@
+interface:
+  display_name: "Creator Clone Lab"
+  short_description: "Batch-distill creator evidence into reviewed knowledge and an Obsidian graph."
+  default_prompt: "Route this creator task, process sources through the resumable extraction queue, generate reviewable promotion, duplicate, and relation candidates, apply only explicit review decisions, then rebuild the creator clone and linked Obsidian vault with complete source citations."
