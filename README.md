@@ -1,6 +1,6 @@
 # Creator Clone Lab
 
-[![Version](https://img.shields.io/badge/version-1.0.0-2563EB.svg?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.1.0-2563EB.svg?style=flat-square)](VERSION)
 [![CI](https://github.com/renyi9044-png/creator-clone-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/renyi9044-png/creator-clone-lab/actions/workflows/ci.yml)
 [![Primary platform](https://img.shields.io/badge/core-Douyin-111827.svg?style=flat-square)](#平台支持)
 [![Privacy](https://img.shields.io/badge/data-local--first-16A34A.svg?style=flat-square)](docs/privacy-and-security.md)
@@ -17,7 +17,7 @@ Creator Clone Lab 是面向内容创作者的证据驱动研究 Skill。它以�
 
 | 你交给它 | 系统处理 | 最终产出 |
 | --- | --- | --- |
-| 一个抖音主页或视频链接 | 公开抓取、复用已登录浏览器、必要时请求登录 | 视频、元数据、字幕、OCR、ASR、关键帧和采集清单 |
+| 一个抖音主页或视频链接 | Playwright 打开页面、解析跳转、检测登录、观察网络，再调用媒体提取 | 视频、元数据、字幕、OCR、ASR、关键帧和采集清单 |
 | 一批高表现与低表现样本 | 分层、对照、寻找反例，不只总结共同点 | 选题、思考、表达、视觉和转化规律 |
 | 几十到几千条素材 | 原子化、去重候选、关系候选、人工审核 | JSONL 原子库、SQLite 索引和主题单元 |
 | 一个持续更新的对标账号 | 增量抓取、断点续跑、证据回链 | 可查询的创作者 AI 分身 |
@@ -32,13 +32,16 @@ Creator Clone Lab 是面向内容创作者的证据驱动研究 Skill。它以�
 
 ### 2. 抓取失败不会直接停下
 
-每个平台统一执行以下降级链：
+所有网页平台抓取都先调用 Playwright 浏览器自动化 Skill。Playwright 负责打开链接、解析短链跳转、生成页面快照、识别登录状态、操作页面并观察网络请求；`yt-dlp` 和平台脚本只能在 Playwright 确认目标页面与访问权限后作为媒体提取工具使用。
+
+每个平台统一执行以下 Playwright 降级链：
 
 ```text
-公开免登录抓取
-→ 尝试用户已经登录的浏览器
-→ 仅在确实需要时请用户登录或验证
-→ 截图 / OCR / 手工证据兜底
+Playwright 免登录打开公开页面
+→ Playwright 快照 + DOM / 网络响应检查
+→ 复用已认证的 Playwright 命名会话
+→ 仅在确实需要时请用户在 Playwright 可视窗口登录或验证
+→ Playwright 截图 / OCR / 手工证据兜底
 ```
 
 ### 3. 数千条知识原子，不是一个超长总结
@@ -71,7 +74,7 @@ npx -y skills add renyi9044-png/creator-clone-lab -g --all
 用 creator-clone-lab 初始化一个抖音对标研究项目
 ```
 
-首次使用会检查 `yt-dlp`、FFmpeg、语音转文字、OCR、图谱渲染和 SQLite FTS5。需要的能力缺失时，Skill 会安装依赖或明确告诉你缺什么。
+首次使用会检查 Playwright 所需的 Node.js/`npx`、`yt-dlp`、FFmpeg、语音转文字、OCR、图谱渲染和 SQLite FTS5。需要的能力缺失时，Skill 会安装依赖或明确告诉你缺什么。
 
 手动安装和 Windows 环境说明见[新手上手手册](docs/getting-started.md)。
 
@@ -79,8 +82,8 @@ npx -y skills add renyi9044-png/creator-clone-lab -g --all
 
 ```mermaid
 flowchart LR
-    A[账号或链接] --> B[公开抓取]
-    B -->|受限| C[复用登录浏览器]
+    A[账号或链接] --> B[Playwright 公开访问]
+    B -->|受限| C[Playwright 登录会话]
     B --> D[媒体与元数据]
     C --> D
     D --> E[字幕 ASR OCR 关键帧]
@@ -100,7 +103,7 @@ flowchart LR
 ## 常见用法
 
 ```text
-抓取这个抖音账号最近 30 条作品，先检查公开抓取，不行再复用我已登录的浏览器。
+使用 Playwright 浏览器自动化 Skill 抓取这个抖音账号最近 30 条作品。先打开公开页面并检查快照和网络，不行再复用已认证的 Playwright 会话。
 ```
 
 ```text
@@ -123,10 +126,10 @@ flowchart LR
 
 | 平台 | 定位 | 当前能力 |
 | --- | --- | --- |
-| 抖音 | **核心平台** | 短链/主页/单条研究、公开抓取、登录浏览器复用、媒体理解、ASR/OCR、知识化 |
-| 小红书 | 扩展适配 | 公开主页提取、登录浏览器视频捕获、图文与视频理解 |
+| 抖音 | **核心平台** | Playwright 短链/主页/单条研究、登录检测与页面交互、媒体理解、ASR/OCR、知识化 |
+| 小红书 | 扩展适配 | Playwright 公开主页与登录页控制、视频捕获、图文与视频理解 |
 | B 站 | 扩展适配 | 视频信息、互动指标、DASH 媒体和字幕/语音处理 |
-| 快手 | 兼容路径 | 公开抓取、浏览器复用和通用媒体理解 |
+| 快手 | 兼容路径 | Playwright 页面采集、登录会话和通用媒体理解 |
 | 微信公众号 | 兼容路径 | 文章正文、图片、作者、时间和可见指标归档 |
 | 网页/本地文件 | 通用入口 | 文本、图片、音视频和已有导出文件导入 |
 
@@ -198,6 +201,6 @@ creator-clone-lab/
 
 ## 当前版本
 
-`v1.0.0`：首个公开稳定版，包含数千条 JSONL 原子存储、人工审核候选、断点续跑、增量 Obsidian Vault、精确证据回链和关系图谱验证。
+`v1.1.0`：所有网页平台采集统一由 Playwright 浏览器自动化 Skill 控制，并保留媒体提取、ASR、OCR、知识原子、审核队列和 Obsidian 图谱完整链路。
 
 版本发布与升级记录见 [GitHub Releases](https://github.com/renyi9044-png/creator-clone-lab/releases)。

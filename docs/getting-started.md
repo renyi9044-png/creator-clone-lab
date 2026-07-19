@@ -44,6 +44,8 @@ python scripts/check_install_media_tools.py --install --install-system
 
 核心工具包括：
 
+- Playwright 浏览器自动化 Skill：所有网页平台采集的统一控制入口。
+- Node.js / `npx`：Playwright CLI 运行时与兜底启动器。
 - `yt-dlp`：公开媒体与页面提取。
 - FFmpeg / ffprobe：音视频处理。
 - `faster-whisper`：本地语音转文字。
@@ -90,10 +92,10 @@ clone_maturity = not-built
 把主页或作品链接交给 Codex：
 
 ```text
-抓取这个抖音主页。先尝试免登录；如果失败，检查我已经打开并登录的浏览器；仍未登录再提醒我配合。
+使用 Playwright 浏览器自动化 Skill 抓取这个抖音主页。先用命名会话打开公开页面、生成快照并检查网络；公开访问不完整时复用已认证的 Playwright 会话；仍未登录再打开可视窗口提醒我配合。
 ```
 
-系统不会一开始就要求 Cookie，也不会把浏览器会话写入项目。采集结果先进入 `capture_manifest.json`，然后注册为可追溯来源。
+所有网页抓取必须先经过 Playwright 页面验证。`yt-dlp` 和平台脚本只在 Playwright 确认目标页面与权限后提取媒体或结构化数据。系统不会要求用户粘贴 Cookie，也不会把 Playwright 会话写入项目。采集结果先进入 `capture_manifest.json`，然后注册为可追溯来源。
 
 ## 5. 处理无字幕视频
 
@@ -167,7 +169,7 @@ python scripts/render_obsidian_graph.py projects/test-creator/内容资产工程
 
 **一定要登录吗？**
 
-不一定。先做公开抓取；平台限制公开访问时，才复用已经登录的浏览器。
+不一定。Playwright 先打开公开页面；平台限制公开访问时，才复用已认证的 Playwright 命名会话或请用户在可视 Playwright 窗口登录。
 
 **知识库是一个大 Markdown 文件吗？**
 

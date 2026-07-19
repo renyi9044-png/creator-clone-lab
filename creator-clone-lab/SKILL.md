@@ -3,7 +3,7 @@ name: creator-clone-lab
 description: Evidence-first creator intelligence system for capturing Douyin, Xiaohongshu, Kuaishou, Bilibili, WeChat, web, and local content; building a traceable local knowledge base; distilling topic selection, thinking, expression, and visual patterns; creating an AI creator clone; generating and reviewing content; and updating the clone from publishing performance. Use for 抓取对标, 蒸馏博主, 创作者知识库, AI 分身, 选题/脚本生成, 稿件诊断, 数据复盘, or incremental creator updates.
 ---
 
-# Creator Clone Lab V1.0
+# Creator Clone Lab V1.1
 
 ## Mission
 
@@ -75,6 +75,8 @@ python scripts/check_install_media_tools.py --install --install-system
 
 Core capabilities:
 
+- The `playwright` browser-automation skill is the mandatory controller for every web-platform capture.
+- Node.js and `npx` launch Playwright CLI when the dedicated skill wrapper is unavailable.
 - `yt-dlp` for public media/page extraction.
 - `websocket-client` for logged-in Chrome debug sessions.
 - `ffmpeg` and `ffprobe` for media processing.
@@ -196,13 +198,20 @@ Accepting a relation writes the typed edge to its source unit. Accepting a promo
 
 ## Capture And Understanding
 
-For every web platform use this fallback order:
+Invoke the installed `playwright` skill before every web-platform capture. Use Playwright to open and resolve the URL, take a fresh snapshot, inspect visible page state, detect authentication, perform required interaction, and inspect network activity. Use one named Playwright session per platform or creator so browser state is isolated and reusable.
+
+Do not make a direct HTTP client, `yt-dlp`, or a platform-specific script the first contact with a web source. Those tools may run only after Playwright has confirmed the canonical page, visible access level, and capture target. They are downstream media/data extractors, not replacements for browser verification.
+
+If the `playwright` skill is unavailable, check `npx` and use `npx --yes --package @playwright/cli playwright-cli`. If neither path is available, install Node.js/npm or stop and tell the user exactly what is missing. Do not silently switch to an unverified requests-only workflow.
+
+For every web platform use this Playwright-controlled fallback order:
 
 ```text
-public/no-login extraction
--> existing logged-in browser
--> user-assisted login or verification
--> screenshots/OCR/manual evidence fallback
+Playwright opens the public page without login
+-> Playwright snapshot + visible DOM/network inspection
+-> reuse an authenticated named Playwright session
+-> user-assisted login or verification in the headed Playwright window
+-> Playwright screenshot + OCR/manual evidence fallback
 ```
 
 For content understanding use:

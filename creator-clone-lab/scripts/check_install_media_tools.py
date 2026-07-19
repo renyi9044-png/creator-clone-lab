@@ -86,6 +86,31 @@ def install_ffmpeg() -> None:
     print("  Ubuntu:  sudo apt-get update && sudo apt-get install -y ffmpeg")
 
 
+def install_node() -> None:
+    system = platform.system().lower()
+    if shutil.which("node") and shutil.which("npx"):
+        return
+
+    if system == "windows" and shutil.which("winget"):
+        code = run(["winget", "install", "--id", "OpenJS.NodeJS.LTS", "-e", "--accept-package-agreements", "--accept-source-agreements"])
+        if code == 0:
+            return
+    elif system == "darwin" and shutil.which("brew"):
+        code = run(["brew", "install", "node"])
+        if code == 0:
+            return
+    elif system == "linux" and shutil.which("apt-get"):
+        code = run(["sudo", "apt-get", "update"])
+        if code == 0:
+            code = run(["sudo", "apt-get", "install", "-y", "nodejs", "npm"])
+            if code == 0:
+                return
+
+    print("\nNode.js/npx are still missing. Install Node.js LTS, then verify:")
+    print("  node --version")
+    print("  npx --version")
+
+
 def missing_python_packages() -> list[str]:
     missing: list[str] = []
     for dep in PY_DEPS:
@@ -113,13 +138,17 @@ def has_sqlite_fts5() -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--install", action="store_true", help="Install missing Python packages")
-    parser.add_argument("--install-system", action="store_true", help="Try installing ffmpeg with winget/brew/apt")
+    parser.add_argument("--install-system", action="store_true", help="Try installing Node.js and ffmpeg with winget/brew/apt")
     args = parser.parse_args()
 
     print("Creator Clone Lab dependency check\n")
 
     missing_packages = missing_python_packages()
     ffmpeg_ok, ffprobe_ok = has_ffmpeg_tools()
+    node_ok = shutil.which("node") is not None
+    npx_ok = shutil.which("npx") is not None
+    print(f"{'node':<24} {'OK' if node_ok else 'MISSING':<8} Playwright browser automation runtime")
+    print(f"{'npx':<24} {'OK' if npx_ok else 'MISSING':<8} Playwright CLI launcher")
     print(f"{'ffmpeg':<24} {'OK' if ffmpeg_ok else 'MISSING':<8} video/audio processing")
     print(f"{'ffprobe':<24} {'OK' if ffprobe_ok else 'MISSING':<8} media inspection")
     sqlite_fts_ok = has_sqlite_fts5()
@@ -143,6 +172,14 @@ def main() -> int:
         print(f"{'ffmpeg':<24} {'OK' if ffmpeg_ok else 'MISSING':<8} video/audio processing")
         print(f"{'ffprobe':<24} {'OK' if ffprobe_ok else 'MISSING':<8} media inspection")
 
+    if args.install_system and (not node_ok or not npx_ok):
+        print("\nTrying to install Node.js/npx for Playwright...")
+        install_node()
+        node_ok = shutil.which("node") is not None
+        npx_ok = shutil.which("npx") is not None
+        print(f"{'node':<24} {'OK' if node_ok else 'MISSING':<8} Playwright browser automation runtime")
+        print(f"{'npx':<24} {'OK' if npx_ok else 'MISSING':<8} Playwright CLI launcher")
+
     if not args.install and missing_packages:
         print("\nMissing Python packages. Run:")
         print(f"  {sys.executable} scripts/check_install_media_tools.py --install")
@@ -160,9 +197,13 @@ def main() -> int:
     if not sqlite_fts_ok:
         print("\nSQLite FTS5 is unavailable in this Python build. Install a standard Python build with SQLite FTS5 support.")
 
+    if not node_ok or not npx_ok:
+        print("\nPlaywright browser automation is unavailable. Install Node.js LTS, then invoke the playwright skill or run:")
+        print("  npx --yes --package @playwright/cli playwright-cli --help")
+
     required_modules = {"yt_dlp", "websocket", "rapidocr_onnxruntime", "PIL", "networkx", "numpy", "cv2"}
     required_missing = [dep.package for dep in PY_DEPS if dep.module in required_modules and not has_module(dep.module)]
-    if required_missing or not asr_ok or not ffmpeg_ok or not ffprobe_ok or not sqlite_fts_ok:
+    if required_missing or not asr_ok or not node_ok or not npx_ok or not ffmpeg_ok or not ffprobe_ok or not sqlite_fts_ok:
         return 1
 
     print("\nAll required tools are available.")

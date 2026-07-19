@@ -9,9 +9,9 @@ Creator Clone Lab 的目标不是生成一份静态账号报告，而是建立�
 ```mermaid
 flowchart TB
     subgraph L1[采集层]
-        A1[主页与单条链接]
+        A1[Playwright 主页与单条链接]
         A2[本地文件与平台导出]
-        A3[已登录浏览器]
+        A3[Playwright 认证命名会话]
     end
     subgraph L2[理解层]
         B1[元数据与互动指标]
