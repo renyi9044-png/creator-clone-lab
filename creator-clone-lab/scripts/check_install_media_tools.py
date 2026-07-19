@@ -35,6 +35,7 @@ PY_DEPS = [
     PyDep("rapidocr_onnxruntime", "rapidocr-onnxruntime", "OCR for burned-in subtitles"),
     PyDep("PIL", "pillow", "image loading"),
     PyDep("networkx", "networkx", "Obsidian relationship graph previews"),
+    PyDep("numpy", "numpy", "relationship graph layout"),
     PyDep("cv2", "opencv-python-headless", "frame processing"),
 ]
 
@@ -159,7 +160,7 @@ def main() -> int:
     if not sqlite_fts_ok:
         print("\nSQLite FTS5 is unavailable in this Python build. Install a standard Python build with SQLite FTS5 support.")
 
-    required_modules = {"yt_dlp", "websocket", "rapidocr_onnxruntime", "PIL", "networkx", "cv2"}
+    required_modules = {"yt_dlp", "websocket", "rapidocr_onnxruntime", "PIL", "networkx", "numpy", "cv2"}
     required_missing = [dep.package for dep in PY_DEPS if dep.module in required_modules and not has_module(dep.module)]
     if required_missing or not asr_ok or not ffmpeg_ok or not ffprobe_ok or not sqlite_fts_ok:
         return 1

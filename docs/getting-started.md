@@ -48,7 +48,7 @@ python scripts/check_install_media_tools.py --install --install-system
 - FFmpeg / ffprobe：音视频处理。
 - `faster-whisper`：本地语音转文字。
 - RapidOCR、OpenCV、Pillow：画面文字和关键帧处理。
-- NetworkX、Pillow：关系图谱预览。
+- NetworkX、NumPy、Pillow：关系图谱布局与预览。
 - SQLite FTS5：本地全文检索。
 - `GROQ_API_KEY`：可选的云端语音转文字兜底。
 
