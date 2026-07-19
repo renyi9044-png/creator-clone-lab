@@ -21,14 +21,21 @@ def run_script(name: str, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["PYTHONUTF8"] = "1"
     env["PYTHONIOENCODING"] = "utf-8"
-    return subprocess.run(
+    result = subprocess.run(
         [sys.executable, str(SCRIPTS / name), *args],
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         encoding="utf-8",
         env=env,
     )
+    if result.returncode != 0:
+        raise AssertionError(
+            f"{name} failed with exit code {result.returncode}\n"
+            f"stdout:\n{result.stdout}\n"
+            f"stderr:\n{result.stderr}"
+        )
+    return result
 
 
 class KnowledgeWorkflowTest(unittest.TestCase):
