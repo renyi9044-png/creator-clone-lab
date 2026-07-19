@@ -3,7 +3,7 @@ name: creator-clone-lab
 description: Evidence-first creator intelligence system for capturing Douyin, Xiaohongshu, Kuaishou, Bilibili, WeChat, web, and local content; building a traceable local knowledge base; distilling topic selection, thinking, expression, and visual patterns; creating an AI creator clone; generating and reviewing content; and updating the clone from publishing performance. Use for 抓取对标, 蒸馏博主, 创作者知识库, AI 分身, 选题/脚本生成, 稿件诊断, 数据复盘, or incremental creator updates.
 ---
 
-# Creator Clone Lab V2.6
+# Creator Clone Lab V1.0
 
 ## Mission
 

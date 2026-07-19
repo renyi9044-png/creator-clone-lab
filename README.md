@@ -1,6 +1,6 @@
 # Creator Clone Lab
 
-[![Version](https://img.shields.io/badge/version-2.6.0-2563EB.svg?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.0.0-2563EB.svg?style=flat-square)](VERSION)
 [![CI](https://github.com/renyi9044-png/creator-clone-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/renyi9044-png/creator-clone-lab/actions/workflows/ci.yml)
 [![Primary platform](https://img.shields.io/badge/core-Douyin-111827.svg?style=flat-square)](#平台支持)
 [![Privacy](https://img.shields.io/badge/data-local--first-16A34A.svg?style=flat-square)](docs/privacy-and-security.md)
@@ -198,6 +198,6 @@ creator-clone-lab/
 
 ## 当前版本
 
-`v2.6.0`：加入数千条 JSONL 原子存储、人工审核候选、断点续跑、增量 Obsidian Vault、精确证据回链和关系图谱验证。
+`v1.0.0`：首个公开稳定版，包含数千条 JSONL 原子存储、人工审核候选、断点续跑、增量 Obsidian Vault、精确证据回链和关系图谱验证。
 
 版本发布与升级记录见 [GitHub Releases](https://github.com/renyi9044-png/creator-clone-lab/releases)。
