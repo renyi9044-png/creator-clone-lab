@@ -71,16 +71,29 @@ If `yt-dlp` returns HTTP 412, use the bundled API fallback and merge DASH video/
 
 ## ASR
 
-Local first:
+Preferred automatic path (Groq first, local fallback):
 
 ```bash
-python scripts/transcribe_audio.py input.mp4 --provider local --output transcript.txt --language zh
+python scripts/transcribe_audio.py input.mp4 --output transcript.txt --language zh
 ```
 
-API fallback:
+Configure the key in the operating-system user environment, not in the skill or project:
+
+```powershell
+[Environment]::SetEnvironmentVariable("GROQ_API_KEY", "your-key", "User")
+```
 
 ```bash
-python scripts/transcribe_audio.py input.mp4 --provider groq --output transcript.txt --language zh
+export GROQ_API_KEY="your-key"
+```
+
+Create a key at `https://console.groq.com/keys`. Never commit it, package it, or ask the user to paste it into a public artifact. Restart the terminal or Codex after setting a persistent environment variable.
+
+Use local explicitly when Groq cannot be configured:
+
+```bash
+python scripts/check_install_media_tools.py --install-local-asr
+python scripts/transcribe_audio.py input.mp4 --provider local --output transcript.txt --language zh
 ```
 
 Specialized terms may require a larger local model or a second provider comparison.

@@ -31,7 +31,7 @@ class PyDep:
 PY_DEPS = [
     PyDep("yt_dlp", "yt-dlp", "video/page extraction"),
     PyDep("websocket", "websocket-client", "browser debug connection"),
-    PyDep("faster_whisper", "faster-whisper", "ASR speech-to-text"),
+    PyDep("faster_whisper", "faster-whisper", "local ASR fallback"),
     PyDep("rapidocr_onnxruntime", "rapidocr-onnxruntime", "OCR for burned-in subtitles"),
     PyDep("PIL", "pillow", "image loading"),
     PyDep("networkx", "networkx", "Obsidian relationship graph previews"),
@@ -111,12 +111,14 @@ def install_node() -> None:
     print("  npx --version")
 
 
-def missing_python_packages() -> list[str]:
+def missing_python_packages(groq_key_ok: bool = False, install_local_asr: bool = False) -> list[str]:
     missing: list[str] = []
     for dep in PY_DEPS:
         ok = has_module(dep.module)
-        print(f"{dep.module:<24} {'OK' if ok else 'MISSING':<8} {dep.purpose}")
-        if not ok:
+        optional = dep.module == "faster_whisper" and groq_key_ok and not install_local_asr
+        status = "OK" if ok else "OPTIONAL" if optional else "MISSING"
+        print(f"{dep.module:<24} {status:<8} {dep.purpose}")
+        if not ok and not optional:
             missing.append(dep.package)
     return missing
 
@@ -138,12 +140,14 @@ def has_sqlite_fts5() -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--install", action="store_true", help="Install missing Python packages")
+    parser.add_argument("--install-local-asr", action="store_true", help="Install faster-whisper as the local ASR fallback")
     parser.add_argument("--install-system", action="store_true", help="Try installing Node.js and ffmpeg with winget/brew/apt")
     args = parser.parse_args()
 
     print("Creator Clone Lab dependency check\n")
 
-    missing_packages = missing_python_packages()
+    groq_key_ok = bool(os.environ.get("GROQ_API_KEY"))
+    missing_packages = missing_python_packages(groq_key_ok, args.install_local_asr)
     ffmpeg_ok, ffprobe_ok = has_ffmpeg_tools()
     node_ok = shutil.which("node") is not None
     npx_ok = shutil.which("npx") is not None
@@ -153,17 +157,17 @@ def main() -> int:
     print(f"{'ffprobe':<24} {'OK' if ffprobe_ok else 'MISSING':<8} media inspection")
     sqlite_fts_ok = has_sqlite_fts5()
     print(f"{'sqlite_fts5':<24} {'OK' if sqlite_fts_ok else 'MISSING':<8} local knowledge search")
-    groq_key_ok = bool(os.environ.get("GROQ_API_KEY"))
-    print(f"{'GROQ_API_KEY':<24} {'SET' if groq_key_ok else 'NOT SET':<8} optional API fallback for ASR")
+    print(f"{'GROQ_API_KEY':<24} {'SET' if groq_key_ok else 'NOT SET':<8} preferred ASR provider")
 
-    if args.install and missing_packages:
+    if (args.install or args.install_local_asr) and missing_packages:
         print("\nInstalling missing Python packages...")
-        failed_installs = pip_install(missing_packages)
+        packages_to_install = missing_packages if args.install else [package for package in missing_packages if package == "faster-whisper"]
+        failed_installs = pip_install(packages_to_install)
         if failed_installs:
             print("\nCould not install: " + ", ".join(failed_installs))
             print("Continue with the installed capabilities and configure the documented fallback where available.")
         print("\nRechecking Python packages...")
-        missing_packages = missing_python_packages()
+        missing_packages = missing_python_packages(groq_key_ok, args.install_local_asr)
 
     if args.install_system and (not ffmpeg_ok or not ffprobe_ok):
         print("\nTrying to install ffmpeg/ffprobe...")
@@ -180,15 +184,16 @@ def main() -> int:
         print(f"{'node':<24} {'OK' if node_ok else 'MISSING':<8} Playwright browser automation runtime")
         print(f"{'npx':<24} {'OK' if npx_ok else 'MISSING':<8} Playwright CLI launcher")
 
-    if not args.install and missing_packages:
+    if not args.install and not args.install_local_asr and missing_packages:
         print("\nMissing Python packages. Run:")
         print(f"  {sys.executable} scripts/check_install_media_tools.py --install")
 
     asr_ok = has_module("faster_whisper") or groq_key_ok
     if not asr_ok:
-        print("\nASR fallback is not ready.")
-        print("Either install faster-whisper locally or set GROQ_API_KEY for API transcription.")
-        print("If faster-whisper has no wheel for this Python version, use Python 3.11/3.12 or the API fallback.")
+        print("\nASR is not ready.")
+        print("Preferred: configure GROQ_API_KEY for Groq transcription.")
+        print(f"Local fallback: {sys.executable} scripts/check_install_media_tools.py --install-local-asr")
+        print("If faster-whisper has no wheel, use Python 3.11/3.12.")
 
     if (not ffmpeg_ok or not ffprobe_ok) and not args.install_system:
         print("\nffmpeg/ffprobe missing. Run with --install-system or install manually:")

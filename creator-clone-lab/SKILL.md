@@ -80,14 +80,14 @@ Core capabilities:
 - `yt-dlp` for public media/page extraction.
 - `websocket-client` for logged-in Chrome debug sessions.
 - `ffmpeg` and `ffprobe` for media processing.
-- `faster-whisper` for local ASR.
+- `GROQ_API_KEY` for the preferred Groq Whisper ASR path.
+- `faster-whisper` as the local ASR fallback when Groq cannot be configured or reached.
 - `rapidocr-onnxruntime`, OpenCV, and Pillow for OCR/frame processing.
 - NetworkX and Pillow for portable Obsidian relationship-graph previews.
-- Optional `GROQ_API_KEY` for ASR fallback.
 - Python `sqlite3` with FTS5 for the local knowledge index.
 
 Use one Python environment for the checker and all scripts. On Windows decoding errors, set `PYTHONUTF8=1`.
-If `faster-whisper` has no wheel for the installed Python version, use Python 3.11/3.12 or configure `GROQ_API_KEY`; do not claim speech was understood until one ASR path succeeds.
+For speech-to-text, configure `GROQ_API_KEY` first and run `transcribe_audio.py` with its default `auto` provider. If the user cannot configure Groq, run `check_install_media_tools.py --install-local-asr`; `auto` then uses local faster-whisper. If Groq is configured but a request fails, `auto` also falls back locally when faster-whisper is installed. Never ask the user to commit or package the key, and do not claim speech was understood until one ASR path succeeds.
 
 ## Knowledge Project Quick Start
 

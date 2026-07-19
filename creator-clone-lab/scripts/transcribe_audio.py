@@ -3,8 +3,8 @@
 Transcribe an audio/video file for Creator Clone Lab.
 
 Default behavior:
-  1. Try local faster-whisper when installed.
-  2. Fall back to Groq Whisper API when GROQ_API_KEY is set.
+  1. Use Groq Whisper API when GROQ_API_KEY is set.
+  2. Fall back to local faster-whisper when Groq is unavailable.
 
 Usage:
   python scripts/transcribe_audio.py input.mp4 --output transcript.txt --language zh
@@ -112,12 +112,41 @@ def transcribe_groq(path: Path, language: str | None, model_name: str) -> str:
         raise RuntimeError(f"Groq transcription failed: {exc}") from exc
 
 
+def transcribe_auto(
+    path: Path,
+    language: str | None,
+    groq_model: str,
+    local_model: str,
+) -> tuple[str, str]:
+    """Prefer Groq, then use local ASR when Groq is unavailable."""
+    if os.environ.get("GROQ_API_KEY"):
+        try:
+            return transcribe_groq(path, language, groq_model), "groq"
+        except Exception as exc:
+            print(f"Groq ASR unavailable, trying local faster-whisper: {exc}", file=sys.stderr)
+            if has_local_whisper():
+                return transcribe_local(path, language, local_model), "local-fallback"
+            raise RuntimeError(
+                "Groq ASR failed and local faster-whisper is not installed. "
+                "Retry later or run check_install_media_tools.py --install-local-asr."
+            ) from exc
+
+    if has_local_whisper():
+        print("GROQ_API_KEY is not set; using local faster-whisper.", file=sys.stderr)
+        return transcribe_local(path, language, local_model), "local"
+
+    raise RuntimeError(
+        "No ASR provider is ready. Configure GROQ_API_KEY first, or run "
+        "check_install_media_tools.py --install-local-asr when Groq cannot be used."
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="Audio or video file to transcribe")
     parser.add_argument("--output", "-o", help="Write transcript to this file")
     parser.add_argument("--language", default="zh", help="ISO-639-1 language code, e.g. zh, en")
-    parser.add_argument("--provider", choices=["auto", "local", "groq"], default="auto", help="auto uses local first, then Groq fallback")
+    parser.add_argument("--provider", choices=["auto", "local", "groq"], default="auto", help="auto uses Groq first, then local fallback")
     parser.add_argument("--local-model", default="small", help="faster-whisper model, e.g. base, small, medium; use medium or Groq for better Chinese creator terms")
     parser.add_argument("--groq-model", default="whisper-large-v3-turbo")
     args = parser.parse_args()
@@ -130,17 +159,23 @@ def main() -> int:
     provider = args.provider
     transcript: str
 
-    if provider in {"auto", "local"} and has_local_whisper():
-        transcript = transcribe_local(input_path, args.language, args.local_model)
-        used = "local"
-    elif provider == "local":
-        print("Local faster-whisper is not installed. Run check_install_media_tools.py --install.", file=sys.stderr)
-        return 1
-    elif provider in {"auto", "groq"}:
-        transcript = transcribe_groq(input_path, args.language, args.groq_model)
-        used = "groq"
-    else:
-        print("No ASR provider is available. Install faster-whisper or set GROQ_API_KEY.", file=sys.stderr)
+    try:
+        if provider == "auto":
+            transcript, used = transcribe_auto(input_path, args.language, args.groq_model, args.local_model)
+        elif provider == "groq":
+            transcript = transcribe_groq(input_path, args.language, args.groq_model)
+            used = "groq"
+        elif has_local_whisper():
+            transcript = transcribe_local(input_path, args.language, args.local_model)
+            used = "local"
+        else:
+            print(
+                "Local faster-whisper is not installed. Run check_install_media_tools.py --install-local-asr.",
+                file=sys.stderr,
+            )
+            return 1
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
         return 1
 
     if args.output:
