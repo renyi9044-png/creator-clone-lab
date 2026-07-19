@@ -28,8 +28,12 @@ RELATIONSHIPS = {"responds_to", "explains", "proves", "conflicts_with", "follows
 def load_list(value: str, label: str) -> list[dict]:
     if not value:
         return []
-    candidate = Path(value)
-    data = json.loads(candidate.read_text(encoding="utf-8")) if candidate.exists() else json.loads(value)
+    stripped = value.lstrip()
+    if stripped.startswith(("[", "{")):
+        data = json.loads(value)
+    else:
+        candidate = Path(value)
+        data = json.loads(candidate.read_text(encoding="utf-8")) if candidate.exists() else json.loads(value)
     if not isinstance(data, list):
         raise ValueError(f"{label} must be a JSON array")
     return data

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -59,6 +60,18 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
+def release_files() -> list[Path]:
+    tracked = subprocess.run(
+        ["git", "ls-files", "-z"],
+        cwd=ROOT,
+        capture_output=True,
+        check=False,
+    )
+    if tracked.returncode == 0 and tracked.stdout:
+        return [ROOT / item.decode("utf-8") for item in tracked.stdout.split(b"\0") if item]
+    return [path for path in ROOT.rglob("*") if path.is_file() and ".git" not in path.parts]
+
+
 def main() -> None:
     missing = [str(path.relative_to(ROOT)) for path in REQUIRED_FILES if not path.is_file()]
     if missing:
@@ -75,7 +88,7 @@ def main() -> None:
     if f"# Creator Clone Lab V{major_minor}" not in skill_text:
         fail("VERSION and SKILL.md heading disagree")
 
-    files = [path for path in ROOT.rglob("*") if path.is_file() and ".git" not in path.parts]
+    files = release_files()
     for path in files:
         relative = path.relative_to(ROOT)
         lowered_parts = {part.lower() for part in relative.parts}
